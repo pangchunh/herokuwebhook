@@ -1,5 +1,6 @@
 const express = require('express');
 const crypto = require('crypto');
+const { assert } = require('console');
 require('dotenv').config();
 const PORT = process.env.PORT || 5000;
 const app = express();
@@ -22,6 +23,16 @@ const validSignature = async (req, secret) => {
   return digest === heroku_hmac;
 }
 
+const postToSlack = async (text) => {
+  const url = process.env.APPLICATION_EVENTS_SLACK_WEBHOOK_URL
+  const body = JSON.stringify({text});
+  const headers = {
+    'Content-Type': 'application/json',
+  }
+  const response = await fetch(url, {method: 'POST', body, headers})
+  return response;
+}
+
 app.post('/webhook', async (req,res) => {
   if (!req.body) {
     return res.status(400).send('Bad Request: Empty request body');
@@ -38,11 +49,15 @@ app.post('/webhook', async (req,res) => {
 
   const {data} = req.body;
   console.log(`data: ${JSON.stringify(data)}`)
-  const {name, state, management} = data;
-  console.log(`name: ${name}`)
-  console.log(`state: ${state}`)
-  console.log(`management: ${management}`)
+  const {name, state} = data;
 
+  const text = `Application ${name} is now scaling ${state}`;
+
+  const response = await postToSlack(text);
+  if (!response.ok) {
+    console.log(`Error posting to slack: ${response.status} ${response.statusText}`)
+    return res.status(500).send('Error posting to slack');
+  }
   res.status(204).send('OK');
 
 })
