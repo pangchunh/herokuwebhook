@@ -4,6 +4,9 @@ require('dotenv').config();
 const PORT = process.env.PORT || 5000;
 const app = express();
 
+app.use(express.json());
+
+
 const validSignature = async (req, secret) => {
   const body = JSON.stringify(req.body);
   console.log("Headers: ", JSON.stringify(req.headers))
@@ -20,6 +23,10 @@ const validSignature = async (req, secret) => {
 }
 
 app.post('/webhook', async (req,res) => {
+  if (!req.body) {
+    return res.status(400).send('Bad Request: Empty request body');
+  }
+
   const secret = process.env.SECRET;
   console.log("Headers: ", JSON.stringify(req.headers))
 
