@@ -51,7 +51,10 @@ app.post('/webhook', async (req,res) => {
   console.log(`data: ${JSON.stringify(data)}`)
   const {name, state} = data;
 
-  const text = `Application ${name} is now scaling ${state}`;
+  let text = `${name} is now ${state}`;
+  if (state === 'crashed'){
+    text += ' <!here>'
+  }
 
   const response = await postToSlack(text);
   if (!response.ok) {
